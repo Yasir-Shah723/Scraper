@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medium Article Scraper - DS Assignment 4</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📰 Medium Article Scraper</h1>
+            <p class="subtitle">Scrape Medium articles and extract detailed information</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/" class="nav-tab active">Home</a>
+            <a href="/" class="nav-tab">Scrape</a>
+            <a href="/search" class="nav-tab">Search</a>
+            <a href="/articles" class="nav-tab">Articles</a>
+        </nav>
+
+        <main class="main-content">
+            <div class="card">
+                <h2>Enter Medium Article URLs</h2>
+                <p class="instruction">Paste one or more Medium article URLs (one per line)</p>
+                
+                <form id="scrapeForm" method="POST" action="/scrape">
+                    <div class="form-group">
+                        <label for="urls">Article URLs:</label>
+                        <textarea 
+                            id="urls" 
+                            name="urls" 
+                            rows="8" 
+                            placeholder="https://medium.com/@author/article-title&#10;https://medium.com/@author/another-article&#10;..."
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Scrape Articles</span>
+                        <span class="btn-loader" style="display: none;">⏳ Scraping...</span>
+                    </button>
+                </form>
+
+                <div id="resultMessage" class="result-message" style="display: none;"></div>
+            </div>
+
+            <div id="scrapedArticles" style="display: none;">
+                <div class="card">
+                    <h2>Scraped Articles</h2>
+                    <div id="scrapedArticlesList" class="results-grid"></div>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>What gets scraped?</h3>
+                <ul>
+                    <li>Title & Subtitle</li>
+                    <li>Full Article Text</li>
+                    <li>Number of Images & Image URLs</li>
+                    <li>Number of External Links</li>
+                    <li>Author Name & Profile URL</li>
+                    <li>Number of Claps</li>
+                    <li>Reading Time</li>
+                    <li>Keywords</li>
+                </ul>
+                <p class="note">All data is saved to <code>scrapping_results.csv</code></p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('scrapeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const form = this;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoader = submitBtn.querySelector('.btn-loader');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            // Show loading state
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            submitBtn.disabled = true;
+            resultMessage.style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(form);
+            
+            // Send AJAX request
+            fetch('/scrape', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                // Check if response is a redirect
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (!data) return; // Already redirected
+                
+                // Reset button
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                if (data.success) {
+                    // Show success message
+                    resultMessage.style.display = 'block';
+                    resultMessage.className = 'result-message success';
+                    let message = `✅ ${data.message}`;
+                    if (data.errors && data.errors.length > 0) {
+                        message += `<br><small>Errors: ${data.errors.join(', ')}</small>`;
+                    }
+                    resultMessage.innerHTML = message;
+                    
+                    // Display scraped articles below form
+                    if (data.articles && data.articles.length > 0) {
+                        const scrapedSection = document.getElementById('scrapedArticles');
+                        const articlesList = document.getElementById('scrapedArticlesList');
+                        articlesList.innerHTML = '';
+                        
+                        data.articles.forEach(article => {
+                            const articleCard = document.createElement('div');
+                            articleCard.className = 'result-card';
+                            
+                            // Build keywords HTML
+                            let keywordsHTML = '';
+                            if (article.keywords && article.keywords.length > 0) {
+                                keywordsHTML = '<div class="article-keywords">' + 
+                                    article.keywords.map(k => `<span class="keyword-tag">${k}</span>`).join('') + 
+                                    '</div>';
+                            }
+                            
+                            // Build image URLs HTML
+                            let imageUrlsHTML = '';
+                            if (article.image_urls && article.image_urls.length > 0) {
+                                const displayUrls = article.image_urls.slice(0, 3); // Show first 3
+                                imageUrlsHTML = '<div class="article-image-urls">' +
+                                    displayUrls.map(url => `<div class="image-url-item"><a href="${url}" target="_blank">${url.length > 50 ? url.substring(0, 50) + '...' : url}</a></div>`).join('') +
+                                    (article.image_urls.length > 3 ? `<div class="image-url-more">+${article.image_urls.length - 3} more</div>` : '') +
+                                    '</div>';
+                            }
+                            
+                            articleCard.innerHTML = `
+                                <div class="result-header">
+                                    <h3 class="result-title">${article.title}</h3>
+                                </div>
+                                ${article.subtitle && article.subtitle !== 'N/A' && article.subtitle.trim() ? `<p class="result-subtitle">${article.subtitle}</p>` : ''}
+                                
+                                <div class="article-preview-info">
+                                    <div class="info-row">
+                                        <strong>Text:</strong>
+                                        <div class="article-text-preview">${article.text || 'N/A'}</div>
+                                    </div>
+                                    
+                                    <div class="info-row">
+                                        <strong>Number of Images:</strong>
+                                        <span>${article.num_images || 0}</span>
+                                    </div>
+                                    
+                                    ${article.image_urls && article.image_urls.length > 0 ? `
+                                    <div class="info-row">
+                                        <strong>Image URLs:</strong>
+                                        ${imageUrlsHTML}
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div class="info-row">
+                                        <strong>Number of External Links:</strong>
+                                        <span>${article.num_external_links || 0}</span>
+                                    </div>
+                                    
+                                    <div class="info-row">
+                                        <strong>Author Name:</strong>
+                                        <span>${article.author || 'N/A'}</span>
+                                    </div>
+                                    
+                                    ${article.author_url && article.author_url.trim() ? `
+                                    <div class="info-row">
+                                        <strong>Author URL:</strong>
+                                        <a href="${article.author_url}" target="_blank">${article.author_url.length > 50 ? article.author_url.substring(0, 50) + '...' : article.author_url}</a>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div class="info-row">
+                                        <strong>Claps:</strong>
+                                        <span>${article.claps || 0}</span>
+                                    </div>
+                                    
+                                    <div class="info-row">
+                                        <strong>Reading Time:</strong>
+                                        <span>${article.reading_time || 'N/A'}</span>
+                                    </div>
+                                    
+                                    ${keywordsHTML ? `
+                                    <div class="info-row">
+                                        <strong>Keywords:</strong>
+                                        ${keywordsHTML}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                
+                                <div class="result-footer">
+                                    <a href="/article/${article.id}" class="btn btn-primary">Read Full Article →</a>
+                                    ${article.url ? `<a href="${article.url}" target="_blank" class="btn btn-link" style="margin-left: 10px;">Original →</a>` : ''}
+                                </div>
+                            `;
+                            articlesList.appendChild(articleCard);
+                        });
+                        
+                        scrapedSection.style.display = 'block';
+                        scrapedSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                    
+                    // Clear form on success
+                    form.reset();
+                } else {
+                    // Show error
+                    resultMessage.style.display = 'block';
+                    resultMessage.className = 'result-message error';
+                    resultMessage.textContent = `❌ ${data.message}`;
+                }
+            })
+            .catch(error => {
+                // Reset button
+                btnText.style.display = 'inline';
+                btnLoader.style.display = 'none';
+                submitBtn.disabled = false;
+                
+                // Show error
+                resultMessage.style.display = 'block';
+                resultMessage.className = 'result-message error';
+                resultMessage.textContent = `❌ Error: ${error.message}`;
+            });
+        });
+    </script>
+</body>
+</html>
+

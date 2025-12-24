@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Articles - DS Assignment 4</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 All Scraped Articles</h1>
+            <p class="subtitle">Browse all articles from scrapping_results.csv</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/" class="nav-tab">Home</a>
+            <a href="/" class="nav-tab">Scrape</a>
+            <a href="/search" class="nav-tab">Search</a>
+            <a href="/articles" class="nav-tab active">Articles</a>
+        </nav>
+
+        <main class="main-content">
+            {% if message %}
+            <div class="result-message {% if articles %}success{% else %}info{% endif %}">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            {% if articles %}
+            <div class="results-header">
+                <h2>{{ articles|length }} Article(s) Found</h2>
+            </div>
+
+            <div class="results-grid">
+                {% for article in articles %}
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 class="result-title">{{ article.title }}</h3>
+                    </div>
+                    
+                    {% if article.subtitle and article.subtitle != 'N/A' %}
+                    <p class="result-subtitle">{{ article.subtitle }}</p>
+                    {% endif %}
+                    
+                    <div class="result-meta">
+                        <span class="meta-item">
+                            👤 {{ article.author }}
+                        </span>
+                        <span class="meta-item">
+                            👏 {{ article.claps }} claps
+                        </span>
+                        <span class="meta-item">
+                            ⏱️ {{ article.reading_time }}
+                        </span>
+                    </div>
+                    
+                    <div class="result-footer">
+                        <a href="{{ url_for('article_detail', article_id=article.id) }}" class="btn btn-primary">
+                            Read Article →
+                        </a>
+                        {% if article.url %}
+                        <a href="{{ article.url }}" target="_blank" class="btn btn-link" style="margin-left: 10px;">
+                            Original →
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No articles found. Try:</p>
+                <ul>
+                    <li>Scraping some Medium articles first</li>
+                    <li>Checking if scrapping_results.csv exists</li>
+                </ul>
+                <a href="/" class="btn btn-primary">Scrape Articles</a>
+            </div>
+            {% endif %}
+
+            <div class="back-link">
+                <a href="/" class="btn btn-secondary">← Back to Home</a>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+

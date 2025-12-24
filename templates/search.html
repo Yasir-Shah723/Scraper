@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Articles - DS Assignment 4</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Search Similar Articles</h1>
+            <p class="subtitle">Find articles similar to your search query using TF-IDF</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/" class="nav-tab">Home</a>
+            <a href="/" class="nav-tab">Scrape</a>
+            <a href="/search" class="nav-tab active">Search</a>
+            <a href="/articles" class="nav-tab">Articles</a>
+        </nav>
+
+        <main class="main-content">
+            <div class="card">
+                <h2>Enter Search Query</h2>
+                <p class="instruction">Enter keywords or text to find similar articles</p>
+                
+                <form id="searchForm" method="POST" action="/search_results">
+                    <div class="form-group">
+                        <label for="query">Search Query:</label>
+                        <input 
+                            type="text" 
+                            id="query" 
+                            name="query" 
+                            placeholder="e.g., machine learning, Python tutorials, data science..."
+                            required
+                            autofocus
+                        >
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <span class="btn-text">Search Similar Articles</span>
+                        <span class="btn-loader" style="display: none;">⏳ Searching...</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="info-box">
+                <h3>How it works?</h3>
+                <p>The search uses <strong>TF-IDF (Term Frequency-Inverse Document Frequency)</strong> to find articles similar to your query.</p>
+                <ul>
+                    <li>Results are sorted by <strong>similarity score</strong> (highest first)</li>
+                    <li>Then by <strong>number of claps</strong> (most popular first)</li>
+                    <li>Shows top <strong>10 most similar articles</strong></li>
+                </ul>
+                <p class="note">Make sure you have scraped some articles first!</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            // Form will submit normally to show results page
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnLoader = submitBtn.querySelector('.btn-loader');
+            
+            // Show loading state
+            btnText.style.display = 'none';
+            btnLoader.style.display = 'inline';
+            submitBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>
+

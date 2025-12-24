@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - DS Assignment 4</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Search Results</h1>
+            <p class="subtitle">Similar articles for: "<strong>{{ query }}</strong>"</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/" class="nav-tab">Home</a>
+            <a href="/" class="nav-tab">Scrape</a>
+            <a href="/search" class="nav-tab">Search</a>
+            <a href="/articles" class="nav-tab">Articles</a>
+        </nav>
+
+        <main class="main-content">
+            {% if message %}
+            <div class="result-message {% if results %}success{% else %}info{% endif %}">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            {% if results %}
+            <div class="results-header">
+                <h2>Top {{ results|length }} Similar Articles</h2>
+            </div>
+
+            <div class="results-grid">
+                {% for result in results %}
+                <div class="result-card">
+                    <div class="result-header">
+                        <h3 class="result-title">{{ result.title }}</h3>
+                        <div class="similarity-badge">
+                            {{ result.similarity }}% match
+                        </div>
+                    </div>
+                    
+                    <div class="result-meta">
+                        <span class="meta-item">
+                            👤 {{ result.author }}
+                        </span>
+                        <span class="meta-item">
+                            👏 {{ result.claps }} claps
+                        </span>
+                        <span class="meta-item">
+                            ⏱️ {{ result.reading_time }}
+                        </span>
+                    </div>
+                    
+                    <div class="result-footer">
+                        {% if result.article_id is defined %}
+                        <a href="{{ url_for('article_detail', article_id=result.article_id) }}" class="btn btn-primary">
+                            Read Article →
+                        </a>
+                        {% endif %}
+                        {% if result.url %}
+                        <a href="{{ result.url }}" target="_blank" class="btn btn-link" style="margin-left: 10px;">
+                            Original →
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No results found. Try:</p>
+                <ul>
+                    <li>Scraping some articles first</li>
+                    <li>Using different keywords</li>
+                    <li>Making your search query more specific</li>
+                </ul>
+                <a href="/search" class="btn btn-primary">Search Again</a>
+            </div>
+            {% endif %}
+
+            <div class="back-link">
+                <a href="/search" class="btn btn-secondary">← New Search</a>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
+
