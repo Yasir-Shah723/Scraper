@@ -183,6 +183,25 @@ header h1 {
     color: white;
 }
 
+.btn-delete {
+    background: #dc3545;
+    color: white;
+    padding: 8px 20px;
+    border: 2px solid #dc3545;
+    font-size: 0.9em;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-1px);
+}
+
+.btn-delete:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
 /* Result Message */
 .result-message {
     padding: 15px 20px;

@@ -202,6 +202,33 @@ def articles_list():
     
     return render_template('articles.html', articles=articles, message=f'Found {len(articles)} article(s)')
 
+@app.route('/article/delete/<int:article_id>', methods=['POST'])
+def delete_article(article_id):
+    """Delete an article from CSV"""
+    try:
+        global articles_df
+        load_articles()
+        
+        if articles_df is None or articles_df.empty:
+            return jsonify({'success': False, 'message': 'No articles found'}), 404
+        
+        if article_id < 0 or article_id >= len(articles_df):
+            return jsonify({'success': False, 'message': 'Article not found'}), 404
+        
+        # Remove the article from DataFrame
+        articles_df = articles_df.drop(articles_df.index[article_id])
+        
+        # Reset index to maintain sequential IDs
+        articles_df.reset_index(drop=True, inplace=True)
+        
+        # Save updated DataFrame to CSV
+        articles_df.to_csv(CSV_FILE, index=False, encoding='utf-8')
+        
+        return jsonify({'success': True, 'message': 'Article deleted successfully'}), 200
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Error deleting article: {str(e)}'}), 500
+
 @app.route('/article/<int:article_id>')
 def article_detail(article_id):
     """Display full article content"""

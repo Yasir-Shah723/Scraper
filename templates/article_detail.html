@@ -99,7 +99,6 @@
 
         <nav class="nav-tabs">
             <a href="/" class="nav-tab">Home</a>
-            <a href="/" class="nav-tab">Scrape</a>
             <a href="/search" class="nav-tab">Search</a>
             <a href="/articles" class="nav-tab active">Articles</a>
         </nav>
@@ -182,10 +181,51 @@
                         Read Original →
                     </a>
                     {% endif %}
+                    <button onclick="deleteArticle({{ article_id }}, '{{ article.Title|replace("'", "\\'") }}')" class="btn btn-delete" style="margin-left: 10px;">
+                        🗑️ Delete Article
+                    </button>
                 </div>
             </div>
         </main>
     </div>
+
+    <script>
+        function deleteArticle(articleId, articleTitle) {
+            if (!confirm(`Are you sure you want to delete "${articleTitle}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '⏳ Deleting...';
+            
+            // Send delete request
+            fetch(`/article/delete/${articleId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Redirect to articles list
+                    window.location.href = '/articles';
+                } else {
+                    alert('Error: ' + data.message);
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                alert('Error deleting article: ' + error.message);
+                button.disabled = false;
+                button.innerHTML = originalText;
+            });
+        }
+    </script>
 </body>
 </html>
 
